@@ -126,6 +126,7 @@ pub struct WireVector {
 }
 pub trait VectorSequence {
     fn to_line_segments(&self) -> Vec<LineSegment>;
+    fn parametric_distance_to(&self, x: i64, y: i64) -> Option<usize>;
 }
 impl<'a> VectorSequence for &'a [WireVector] {
     fn to_line_segments(&self) -> Vec<LineSegment> {
@@ -151,5 +152,41 @@ impl<'a> VectorSequence for &'a [WireVector] {
                 (x2, y2, acc)
             });
         segments
+    }
+    fn parametric_distance_to(&self, x: i64, y: i64) -> Option<usize> {
+        let (mut x1, mut y1, mut distance) = (0, 0, 0);
+        for elem in self.iter() {
+            let WireVector {
+                direction,
+                magnitude,
+            } = elem;
+            let (x2, y2) = match direction {
+                Direction::Up => (x1, y1 + magnitude),
+                Direction::Down => (x1, y1 - magnitude),
+                Direction::Right => (x1 + magnitude, y1),
+                Direction::Left => (x1 - magnitude, y1),
+            };
+
+            let min_x = min(x1, x2);
+            let max_x = max(x1, x2);
+            let min_y = min(y1, y2);
+            let max_y = max(y1, y2);
+
+            let in_x_range = min_x <= x && x <= max_x;
+            let in_y_range = min_y <= y && y <= max_y;
+
+            if in_x_range && in_y_range {
+                // Calculate partial distance and return
+                let partial_distance = (x - min_x) + (y - min_y);
+                distance += partial_distance.abs() as usize;
+                return Some(distance);
+            }
+
+            x1 = x2;
+            y1 = y2;
+            distance += magnitude.abs() as usize;
+        }
+
+        None
     }
 }

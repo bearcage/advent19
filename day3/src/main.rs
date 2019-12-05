@@ -49,11 +49,23 @@ fn main() {
         }
     }
 
-    if let Some(distance) =
-        intersections.into_iter().filter_map(origin_manhattan).min()
-    {
-        println!("found nearest at distance {}", distance);
-    } else {
-        println!("found no intersections");
+    let mut shortest_circuit = std::usize::MAX;
+    for intersection in intersections {
+        match intersection {
+            Overlap::Point(x, y) => {
+                let d1 = vec1
+                    .as_slice()
+                    .parametric_distance_to(x, y)
+                    .expect("invalid intersection (missing on wire 1)");
+                let d2 = vec2
+                    .as_slice()
+                    .parametric_distance_to(x, y)
+                    .expect("invalid intersection (missing on wire 2)");
+                shortest_circuit = std::cmp::min(shortest_circuit, d1 + d2);
+            },
+            _ => { /* noop for now */ },
+        }
     }
+
+    println!("shortest circuit: {}", shortest_circuit);
 }
